@@ -10,6 +10,7 @@ import pickle
 import shutil
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as font_manager
 from copy import deepcopy
 from warnings import warn
 from collections import namedtuple
@@ -1698,6 +1699,12 @@ def plot_lossmap(lossmap_file, extra_ranges=None, norm='total'):
     warm_loss = aper_loss * mask_warm
     cold_loss = aper_loss * ~mask_warm
 
+    # Change mathtext font to Nimbus Roman
+    plt.rcParams['mathtext.fontset'] = 'custom'
+    plt.rcParams['mathtext.rm'] = 'Nimbus Roman'
+    plt.rcParams['mathtext.it'] = 'Nimbus Roman'
+    plt.rcParams['mathtext.bf'] = 'Nimbus Roman:bold'
+
     # Make the plots
     fig, ax = plt.subplots(figsize=(12, 4))
 
@@ -1717,22 +1724,45 @@ def plot_lossmap(lossmap_file, extra_ranges=None, norm='total'):
     ax.set_xlim(s_range[0] - plot_margin, s_range[1] + plot_margin)
     ax.set_ylim(1e-6, 2)
 
-    ax.yaxis.grid(visible=True, which='major', zorder=0)
-    ax.yaxis.grid(visible=True, which='minor', zorder=0)
+    ax.yaxis.grid(visible=True, which='major', zorder=0, alpha=0.5)
+    ax.yaxis.grid(visible=True, which='minor', zorder=0, alpha=0.5)
 
     ax.set_yscale('log', nonpositive='clip')
-    ax.set_xlabel(r'S [$m$]')
-    ax.set_ylabel(r'Cleaning inefficiency [$m^{-1}$]')
+    ax.set_xlabel(r's [$m$]', fontname='Nimbus Roman', fontsize=18)
+    ax.set_ylabel(r'Cleaning inefficiency [$m^{-1}$]', fontname='Nimbus Roman', fontsize=18)
+
+    # Fake plot for a nice looking legend
+    ax.plot([], [], c='k', lw=8, label='Collimator')
+    ax.plot([], [], c='b', lw=8, label='Cold')
+    ax.plot([], [], c='r', lw=8, label='Warm')
+
+    # Load the Nimbus Roman font and set it as the legend font
+    prop = font_manager.FontProperties(fname='/usr/share/fonts/type1/gsfonts/n021003l.pfb', size=14)
+    ax.legend(prop=prop)
+
+    # Increase the size of the xticks and yticks label
+    ax.tick_params(axis='both', labelsize=14)
+
+    # Add labels for the IPs to the top of the plot
+    ax.text(s_min, 2.8, 'IPA', fontsize=18, fontname='Nimbus Roman', ha='center')
+    ax.text((s_max/8)*1, 2.8, 'PB', fontsize=18, fontname='Nimbus Roman', ha='center')
+    ax.text((s_max/8)*2, 2.8, 'IPD', fontsize=18, fontname='Nimbus Roman', ha='center')
+    ax.text((s_max/8)*3, 2.8, 'PF', fontsize=18, fontname='Nimbus Roman', ha='center')
+    ax.text((s_max/8)*4, 2.8, 'IPG', fontsize=18, fontname='Nimbus Roman', ha='center')
+    ax.text((s_max/8)*5, 2.8, 'PH', fontsize=18, fontname='Nimbus Roman', ha='center')
+    ax.text((s_max/8)*6, 2.8, 'IPJ', fontsize=18, fontname='Nimbus Roman', ha='center')
+    ax.text((s_max/8)*7, 2.8, 'PL', fontsize=18, fontname='Nimbus Roman', ha='center')
+    ax.text(s_max, 2.8, 'IPA', fontsize=18, fontname='Nimbus Roman', ha='center')
 
     # plt.show()
     # return
 
-    plt.savefig('lossmap_full.pdf', bbox_inches='tight')
+    plt.savefig('lossmap_full.png', bbox_inches='tight', dpi=600)
 
     if extra_ranges is not None:
         for srange in extra_ranges:
             ax.set_xlim(srange)
-            plt.savefig("lossmap_{}_{}.pdf".format(srange[0], srange[1]))
+            plt.savefig("lossmap_{}_{}.png".format(srange[0], srange[1]), dpi=600)
 
 
 def rebin(part_file, outfile, line, s0, binwidth, weights):
@@ -1893,7 +1923,7 @@ def main():
         output_file = 'part_merged.hdf'
         load_output(sys.argv[2], output_file, match_pattern=match_pattern, load_particles=True)
     elif sys.argv[1] == '--plot':
-        plot_lossmap(sys.argv[2], extra_ranges=[(33000, 35500), (44500, 46500)], norm='total')
+        plot_lossmap(sys.argv[2], extra_ranges=[], norm='total')
     else:
         raise ValueError('The mode must be one of --run, --submit, --merge, --plot')
 
